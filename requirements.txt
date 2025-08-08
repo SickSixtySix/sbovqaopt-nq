@@ -6,4 +6,3 @@ flake8
 flake8-annotations
 matplotlib
 notebook
-qiskit[nature]
