@@ -1,7 +1,7 @@
 '''
 Tests for sbovqaopt.optimizer module.
 '''
-from sbovqaopt.optimizer import Optimizer
+from sbovqaopt_nq.optimizer import Optimizer
 
 import numpy as np
 
