@@ -10,7 +10,6 @@ class TestOptimizer:
 
     def test_optimizer(self) -> None:
         optimizer = Optimizer()
-        assert isinstance(optimizer.get_support_level(), dict)
 
         def objective(x: np.ndarray) -> float:
             return np.linalg.norm(x)

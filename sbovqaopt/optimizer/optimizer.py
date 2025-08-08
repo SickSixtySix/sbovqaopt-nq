@@ -2,21 +2,15 @@
 Defines the Optimizer class.
 '''
 from .optimizer_iteration import OptimizerIteration
+from .optimizer_result import OptimizerResult
 
 import numpy as np
-import qiskit.algorithms.optimizers.optimizer as qiskitopt
-from typing import Dict, Optional, Union, Callable, Tuple, List
+from typing import Optional, Union, Callable, Tuple, List
 
 POINT = Union[float, np.ndarray]
 
-# qiskit documentation for base Optimizer class:
-# https://qiskit.org/documentation/_modules/qiskit/algorithms/optimizers/optimizer.html
 
-# example implementation of SPSA class derived from Optimizer:
-# https://qiskit.org/documentation/_modules/qiskit/algorithms/optimizers/spsa.html
-
-
-class Optimizer(qiskitopt.Optimizer):
+class Optimizer():
     '''
     Implements surrogate-based optimization using a Gaussian kernel.
 
@@ -56,21 +50,13 @@ class Optimizer(qiskitopt.Optimizer):
         self.epsilon_f = epsilon_f
         self.nfev_final_avg = nfev_final_avg
 
-    def get_support_level(self) -> Dict:
-        """Get the support level dictionary."""
-        return {
-            "initial_point": qiskitopt.OptimizerSupportLevel.required,
-            "gradient": qiskitopt.OptimizerSupportLevel.ignored,
-            "bounds": qiskitopt.OptimizerSupportLevel.ignored,
-        }
-
     def minimize(
         self,
         fun: Callable[[POINT], float],
         x0: POINT,
         jac: Optional[Callable[[POINT], POINT]] = None,
         bounds: Optional[List[Tuple[float, float]]] = None,
-    ) -> qiskitopt.OptimizerResult:
+    ) -> OptimizerResult:
         """Minimize the scalar function.
 
         Args:
@@ -122,7 +108,7 @@ class Optimizer(qiskitopt.Optimizer):
             else current_x
         )
 
-        result = qiskitopt.OptimizerResult()
+        result = OptimizerResult()
         result.nfev = (
             (self.maxiter * self.npoints_per_patch)
             + self.nfev_final_avg
