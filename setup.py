@@ -4,16 +4,16 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="sbovqaopt",
+    name="sbovqaopt_nq",
     version="0.1.0",
-    author="Ryan Shaffer",
-    author_email="ryan@ryanshaffer.net",
+    author="Timur Gubaev",
+    author_email="timur.gubaev@tu-ilmenau.de",
     description=(
-        "Surrogate-based optimizer for variational quantum algorithms."
+        "Surrogate-based optimizer for variational quantum algorithms without requiring Qiskit."
     ),
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/sandialabs/sbovqaopt",
+    url="https://github.com/SickSixtySix/sbovqaopt-nq",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
