@@ -1,8 +1,8 @@
 '''
-Defines the Optimizer class.
+Defines the MultiTermOptimizer class.
 '''
-from .optimizer_iteration import OptimizerIteration
-from .optimizer_result import OptimizerResult
+from .multi_term_optimizer_iteration import MultiTermOptimizerIteration
+from .multi_term_optimizer_result import MultiTermOptimizerResult
 
 import numpy as np
 from typing import Optional, Union, Callable, Tuple, List
@@ -10,9 +10,10 @@ from typing import Optional, Union, Callable, Tuple, List
 POINT = Union[float, np.ndarray]
 
 
-class Optimizer():
+class MultiTermOptimizer():
     '''
-    Implements surrogate-based optimization using a Gaussian kernel.
+    Implements surrogate-based optimization using a Gaussian kernel for cost
+    functions comprised of multiple weighted terms.
 
     Parameters (notation from paper)
 
@@ -50,26 +51,29 @@ class Optimizer():
 
     def minimize(
         self,
-        fun: Callable[[POINT], float],
+        term: Callable[[POINT], POINT],
+        weight: Callable[[POINT], POINT],
         x0: POINT,
-        jac: Optional[Callable[[POINT], POINT]] = None,
-        bounds: Optional[List[Tuple[float, float]]] = None,
-    ) -> OptimizerResult:
+        y0: POINT,
+        weight_jac: Callable[[POINT], POINT],
+    ) -> MultiTermOptimizerResult:
         """Minimize the scalar function.
 
         Args:
-            fun: The (possibly noisy) scalar function to minimize.
+            term: The (possibly noisy) cost function terms.
+            weight: The cost function terms weights.
             x0: The initial point for the minimization.
-            jac: The gradient of the scalar function ``fun``. Ignored.
-            bounds: Bounds for the variables of ``fun``. Ignored.
+            y0: The initial weight parameters for the minimization.
+            weight_jac: The Jacobian of the weight function ``weight``.
 
         Returns:
             The result of the optimization, containing e.g. the result
-            as attribute ``x``.
+            as attributes ``x`` and ``y``.
         """
-        optimizer_iteration = OptimizerIteration()
+        optimizer_iteration = MultiTermOptimizerIteration()
 
         current_x = x0
+        current_y = y0
         local_minima_found = []
         for i in range(self.maxiter):
             optimize_bounds_size = (
@@ -78,8 +82,11 @@ class Optimizer():
                 * (1.0 - i / self.maxiter)
             )
             res = optimizer_iteration.minimize_kde(
-                fun,
+                term,
+                weight,
                 current_x,
+                current_y,
+                weight_jac,
                 self.patch_size,
                 optimize_bounds_size,
                 self.npoints_per_patch,
@@ -106,7 +113,7 @@ class Optimizer():
             else current_x
         )
 
-        result = OptimizerResult()
+        result = MultiTermOptimizerResult()
         result.nfev = (
             (self.maxiter * self.npoints_per_patch)
             + self.nfev_final_avg
@@ -114,9 +121,10 @@ class Optimizer():
         result.nit = self.maxiter
 
         result.x = optimal_x
+        result.y = optimal_y
         if self.nfev_final_avg > 0:
             result.fun = np.mean(
-                [fun(optimal_x) for _ in range(self.nfev_final_avg)]
+                [_fun(term, weight, optimal_x, optimal_y) for _ in range(self.nfev_final_avg)]
             )
         else:
             result.fun = (
@@ -125,3 +133,22 @@ class Optimizer():
             )
 
         return result
+    
+    def _fun(
+        self,
+        term: Callable[[POINT], POINT],
+        weight: Callable[[POINT], POINT],
+        x: POINT,
+        y: POINT,
+    ) -> float:
+        # compute the terms
+        term_val = term(x)
+        
+        # compute the weights
+        weight_val = weight(y)
+        
+        # compute the function value
+        fun_val = weight_val.T @ term_val
+        
+        # return the function value
+        return fun_val
