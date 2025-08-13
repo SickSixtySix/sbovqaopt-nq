@@ -5,7 +5,7 @@ from .optimizer_iteration import OptimizerIteration
 from .optimizer_result import OptimizerResult
 
 import numpy as np
-from typing import Optional, Union, Callable, Tuple, List
+from typing import Optional, Union, Callable, Tuple, List, Dict
 
 POINT = Union[float, np.ndarray]
 
@@ -54,6 +54,7 @@ class Optimizer():
         x0: POINT,
         jac: Optional[Callable[[POINT], POINT]] = None,
         bounds: Optional[List[Tuple[float, float]]] = None,
+        options: Optional[Dict] = None,
     ) -> OptimizerResult:
         """Minimize the scalar function.
 
@@ -71,25 +72,34 @@ class Optimizer():
 
         current_x = x0
         local_minima_found = []
+        nit = self.maxiter
+        collection_x = []
         for i in range(self.maxiter):
             optimize_bounds_size = (
                 self.patch_size
                 * (1.0 - self.epsilon_i)
                 * (1.0 - i / self.maxiter)
             )
-            res = optimizer_iteration.minimize_kde(
+            iter_res = optimizer_iteration.minimize_kde(
                 fun,
                 current_x,
                 self.patch_size,
                 optimize_bounds_size,
                 self.npoints_per_patch,
             )
+            res = iter_res.kde_opt_res
             new_x = res.x
+            collection_x = collection_x + [new_x]
             distance = np.linalg.norm(new_x - current_x, ord=np.inf)
             current_x = new_x
             if distance < (self.patch_size / 2) * (1 - self.epsilon_int):
                 # local minimum found within this patch area
                 local_minima_found.append(new_x)
+            if options is not None and 'gtol' in options:
+                gtol = options['gtol']
+                if np.linalg.norm(iter_res.grad_exp_z * 2 * self.patch_size) < gtol:
+                    nit = i
+                    break
 
         # use all nearby local minima to calculate the optimal x
         local_minima_near_current_x = [
@@ -108,10 +118,10 @@ class Optimizer():
 
         result = OptimizerResult()
         result.nfev = (
-            (self.maxiter * self.npoints_per_patch)
+            (nit * self.npoints_per_patch)
             + self.nfev_final_avg
         )
-        result.nit = self.maxiter
+        result.nit = nit
 
         result.x = optimal_x
         if self.nfev_final_avg > 0:
@@ -124,4 +134,4 @@ class Optimizer():
                 + 'because nfev_final_avg == 0'
             )
 
-        return result
+        return result, collection_x

@@ -1,6 +1,8 @@
 '''
 Defines the OptimizerIteration class.
 '''
+from .optimizer_iteration_result import OptimizerIterationResult
+
 import numpy as np
 from scipy import optimize
 from typing import Callable, Tuple, Any
@@ -82,18 +84,38 @@ class OptimizerIteration:
         optimize_bounds_size: float,
         npoints_per_patch: int,
     ) -> Any:
+        # sample the variational parameters within the patch
         training_point_angles = self._generate_x_coords(
             patch_center_x, patch_size, npoints_per_patch)
+        
+        # measure the cost function at the sampled points
         measured_values = np.atleast_2d(
             [f(x) for x in training_point_angles]
         ).T
 
-        return self._minimize_kde(
+        # create the optimization iteration result
+        iter_res = OptimizerIterationResult()
+
+        # compute the expectation gradients at the patch center and store it
+        _, grad_exp_z = self.get_conditional_expectation_with_gradient(
+            np.concatenate(
+                (training_point_angles, measured_values), axis=1
+            ),
+            patch_center_x
+        )
+        iter_res.grad_exp_z = grad_exp_z
+
+        # minimize the surrogate function and store the results
+        kde_opt_res = self._minimize_kde(
             training_point_angles,
             measured_values,
             patch_center_x,
             optimize_bounds_size,
         )
+        iter_res.kde_opt_res = kde_opt_res
+        
+        # return the iteration result
+        return iter_res
 
     def _minimize_kde(
         self,
