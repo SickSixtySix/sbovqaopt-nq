@@ -73,33 +73,45 @@ class Optimizer():
         current_x = x0
         local_minima_found = []
         nit = self.maxiter
-        collection_x = []
+        message = 'Maximum number of iterations exceeded.'
+        patch_centers_x = []
         for i in range(self.maxiter):
+            patch_centers_x = patch_centers_x + [current_x]
             optimize_bounds_size = (
                 self.patch_size
                 * (1.0 - self.epsilon_i)
                 * (1.0 - i / self.maxiter)
             )
-            iter_res = optimizer_iteration.minimize_kde(
+            res_iter = optimizer_iteration.minimize_kde(
                 fun,
                 current_x,
                 self.patch_size,
                 optimize_bounds_size,
                 self.npoints_per_patch,
             )
-            res = iter_res.kde_opt_res
-            new_x = res.x
-            collection_x = collection_x + [new_x]
+            new_x = res_iter.res_kde.x
             distance = np.linalg.norm(new_x - current_x, ord=np.inf)
             current_x = new_x
             if distance < (self.patch_size / 2) * (1 - self.epsilon_int):
                 # local minimum found within this patch area
                 local_minima_found.append(new_x)
-            if options is not None and 'gtol' in options:
-                gtol = options['gtol']
-                if np.linalg.norm(iter_res.grad_exp_z * 2 * self.patch_size) < gtol:
-                    nit = i
-                    break
+            if options is not None:
+                # check the gradient norm tolerance
+                if 'gtol' in options:
+                    gtol = options['gtol']
+                    grad_exp_z = res_iter.grad_exp_z
+                    norm = np.linalg.norm(grad_exp_z)
+                    if norm < gtol:
+                        nit = i
+                        message = 'Optimization terminated successfully (gradient norm is below gtol).'
+                        break
+                # check the distance tolerance
+                if 'xatol' in options:
+                    xatol = options['xatol']
+                    if distance < xatol:
+                        nit = i
+                        message = 'Optimization terminated successfully (step size is below xatol).'
+                        break
 
         # use all nearby local minima to calculate the optimal x
         local_minima_near_current_x = [
@@ -122,6 +134,8 @@ class Optimizer():
             + self.nfev_final_avg
         )
         result.nit = nit
+        result.message = message
+        result.patch_centers_x = patch_centers_x
 
         result.x = optimal_x
         if self.nfev_final_avg > 0:
@@ -134,4 +148,4 @@ class Optimizer():
                 + 'because nfev_final_avg == 0'
             )
 
-        return result, collection_x
+        return result

@@ -26,12 +26,14 @@ def main():
     #res = optimizer.minimize(objective, x0, options={'gtol': 1e-5})
     #print(vars(res))
     
-    optimizer = Optimizer(patch_size=0.01, nfev_final_avg=20)
-    res, coll_x = optimizer.minimize(objective, x0)
-    print(vars(res))
+    optimizer = Optimizer(patch_size=0.1, npoints_per_patch=100, nfev_final_avg=0)
+    res = optimizer.minimize(objective, x0, options={'xatol': 0.001})
+    print(res.message)
+    print(res.x)
+    print(res.nit)
     norm_x = []
-    for j in range(1, len(coll_x)):
-        norm_x = norm_x + [np.linalg.norm(coll_x[j] - coll_x[j - 1])]
+    for j in range(1, len(res.patch_centers_x)):
+        norm_x = norm_x + [np.linalg.norm(res.patch_centers_x[j] - res.patch_centers_x[j - 1])]
     plt.plot(norm_x)
 
     # test with nfev_final_avg=0, verify that no res.fun is returned

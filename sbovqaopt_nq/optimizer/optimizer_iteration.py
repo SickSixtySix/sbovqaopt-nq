@@ -83,7 +83,7 @@ class OptimizerIteration:
         patch_size: float,
         optimize_bounds_size: float,
         npoints_per_patch: int,
-    ) -> Any:
+    ) -> OptimizerIterationResult:
         # sample the variational parameters within the patch
         training_point_angles = self._generate_x_coords(
             patch_center_x, patch_size, npoints_per_patch)
@@ -94,7 +94,7 @@ class OptimizerIteration:
         ).T
 
         # create the optimization iteration result
-        iter_res = OptimizerIterationResult()
+        res_iter = OptimizerIterationResult()
 
         # compute the expectation gradients at the patch center and store it
         _, grad_exp_z = self.get_conditional_expectation_with_gradient(
@@ -103,19 +103,19 @@ class OptimizerIteration:
             ),
             patch_center_x
         )
-        iter_res.grad_exp_z = grad_exp_z
+        res_iter.grad_exp_z = grad_exp_z
 
         # minimize the surrogate function and store the results
-        kde_opt_res = self._minimize_kde(
+        res_kde = self._minimize_kde(
             training_point_angles,
             measured_values,
             patch_center_x,
             optimize_bounds_size,
         )
-        iter_res.kde_opt_res = kde_opt_res
+        res_iter.res_kde = res_kde
         
         # return the iteration result
-        return iter_res
+        return res_iter
 
     def _minimize_kde(
         self,

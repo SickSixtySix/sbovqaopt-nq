@@ -12,4 +12,4 @@ class OptimizerIterationResult():
         self.grad_exp_z = None
         
         # the underlying optimization result
-        self.kde_opt_res = None
+        self.res_kde = None

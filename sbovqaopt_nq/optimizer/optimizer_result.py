@@ -8,14 +8,20 @@ class OptimizerResult():
     Implements an optimization result data structure.
     '''
     def __init__(self) -> None:
-        # Define the number of function evaluations
+        # define the number of function evaluations
         self.nfev = None
         
-        # Define the number of iterations
+        # define the number of iterations
         self.nit = None
         
-        # Define the optimal x
+        # define the optimal x
         self.x = None
         
-        # Define the final function value
+        # define the final function value
         self.fun = None
+        
+        # define the optimizer message
+        self.message = None
+        
+        # define patch centers coordinates
+        self.patch_centers_x = []
