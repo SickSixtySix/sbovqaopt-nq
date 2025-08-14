@@ -27,7 +27,7 @@ def main():
     #print(vars(res))
     
     optimizer = Optimizer(patch_size=0.1, npoints_per_patch=100, nfev_final_avg=0)
-    res = optimizer.minimize(objective, x0, options={'xatol': 0.001})
+    res = optimizer.minimize(objective, x0)
     print(res.message)
     print(res.x)
     print(res.nit)
